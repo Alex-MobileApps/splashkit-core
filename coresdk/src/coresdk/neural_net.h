@@ -2,9 +2,12 @@
 #define neural_net_h
 
 #include <vector>
+#include <string>
 
 namespace splashkit_lib
 {
+    struct Layer;
+
     struct Layer
     {
         protected:
@@ -16,17 +19,35 @@ namespace splashkit_lib
             std::vector<std::vector<float> > edge_weights;
 
         public:
-            Layer(int n_inputs, int n_outputs, bool inc_bias, bool activation, std::string name);
+            Layer(int n_inputs, int n_outputs, bool inc_bias, std::string name);
             void set_node_weights(std::vector<float> node_weights);
-            void set_edge_weights(std::vector<std::vector<float> > edge_weights);
             std::vector<float> get_node_weights();
-            std::vector<std::vector<float> > get_edge_weights();
-            void display();
+            virtual void set_edge_weights(std::vector<std::vector<float> > edge_weights) = 0;
+            virtual std::vector<std::vector<float> > get_edge_weights() = 0;
+            virtual void display() = 0;
             virtual std::vector<float> forward() = 0;
             virtual std::vector<float> backward(float lr, std::vector<float> &delta) = 0;
     };
 
-    struct Linear : Layer
+    struct DenseLayer : Layer
+    {
+        public:
+            DenseLayer(int n_inputs, int n_outputs, bool inc_bias, std::string name);
+            void display();
+            void set_edge_weights(std::vector<std::vector<float> > edge_weights);
+            std::vector<std::vector<float> > get_edge_weights();
+    };
+
+    struct ActivationLayer : Layer
+    {
+        public:
+            ActivationLayer(int n_inputs, std::string name);
+            void display();
+            void set_edge_weights(std::vector<std::vector<float> > edge_weights);
+            std::vector<std::vector<float> > get_edge_weights();
+    };
+
+    struct Linear : DenseLayer
     {
         public:
             Linear(int n_inputs, int n_outputs, bool inc_bias);
@@ -34,7 +55,7 @@ namespace splashkit_lib
             std::vector<float> backward(float lr, std::vector<float> &delta);
     };
 
-    struct Sigmoid : Layer
+    struct Sigmoid : ActivationLayer
     {
         public:
             Sigmoid(int n_inputs);

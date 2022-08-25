@@ -8,30 +8,16 @@ using namespace std;
 
 namespace splashkit_lib
 {
-    // Layer
-
-    Layer::Layer(int n_inputs, int n_outputs, bool inc_bias, bool activation, string name)
+    Layer::Layer(int n_inputs, int n_outputs, bool inc_bias, string name)
     {
         this->n_inputs = n_inputs;
         this->n_outputs = n_outputs;
         this->inc_bias = inc_bias;
         this->name = name;
 
-        // Add node and edge weights
+        // Add input node weights (edges handled by layer subclasses e.g. dense, activation)
         for (int i = 0; i < n_inputs + inc_bias; i++)
-        {
-            // Add input node weights
             this->node_weights.push_back(0);
-
-            if (!activation)
-            {
-                // Add dense edges
-                vector<float> tmp_edge_weights;
-                for (int j = 0; j < n_outputs; j++)
-                    tmp_edge_weights.push_back(2 * (float)rand() / RAND_MAX - 1);
-                this->edge_weights.push_back(tmp_edge_weights);
-            }
-        }
     }
 
     void Layer::set_node_weights(vector<float> node_weights)
@@ -45,12 +31,25 @@ namespace splashkit_lib
             this->node_weights[i] = node_weights[i];
     }
 
-    void Layer::set_edge_weights(vector<vector<float> > edge_weights)
+    vector<float> Layer::get_node_weights()
     {
-        // Activation functions
-        if (this->edge_weights.size() == 0)
-            return;
+        return this->node_weights;
+    }
 
+    DenseLayer::DenseLayer(int n_inputs, int n_outputs, bool inc_bias, string name) : Layer(n_inputs, n_outputs, inc_bias, name)
+    {
+        // Create fully connected edges
+        for (int i = 0; i < this->n_inputs + this->inc_bias; i++)
+        {
+            vector<float> tmp_edge_weights;
+            for (int j = 0; j < this->n_outputs; j++)
+                tmp_edge_weights.push_back(2 * (float)rand() / RAND_MAX - 1);
+            this->edge_weights.push_back(tmp_edge_weights);
+        }
+    }
+
+    void DenseLayer::set_edge_weights(vector<vector<float> > edge_weights)
+    {
         // Validate input size
         if (edge_weights.size() != this->edge_weights.size())
             throw invalid_argument("Invalid argument");
@@ -61,24 +60,14 @@ namespace splashkit_lib
                 this->edge_weights[i][j] = edge_weights[i][j];
     }
 
-    vector<float> Layer::get_node_weights()
-    {
-        return this->node_weights;
-    }
-
-    vector<vector<float> > Layer::get_edge_weights()
+    vector<std::vector<float> > DenseLayer::get_edge_weights()
     {
         return this->edge_weights;
     }
 
-    void Layer::display()
+    void DenseLayer::display()
     {
         cout << this->name << " (" << this->n_inputs << ',' << this->n_outputs << ')' << endl;
-        if (this->edge_weights.size() == 0)
-        {
-            cout << "  Activation" << endl;
-            return;
-        }
         for (int i = 0; i < this->n_inputs; i++)
         {
             for (int j = 0; j < this->n_outputs; j++)
@@ -88,10 +77,22 @@ namespace splashkit_lib
         }
     }
 
+    ActivationLayer::ActivationLayer(int n_inputs, string name) : Layer(n_inputs, n_inputs, false, name) {}
 
-    // Linear
+    void ActivationLayer::set_edge_weights(vector<vector<float> > edge_weights) {}
 
-    Linear::Linear(int n_inputs, int n_outputs, bool inc_bias) : Layer(n_inputs, n_outputs, inc_bias, false, "Linear") {}
+    vector<std::vector<float> > ActivationLayer::get_edge_weights()
+    {
+        return this->edge_weights;
+    }
+
+    void ActivationLayer::display()
+    {
+        cout << this->name << " (" << this->n_inputs << ',' << this->n_outputs << ')' << endl;
+        cout << "  Activation" << endl;
+    }
+
+    Linear::Linear(int n_inputs, int n_outputs, bool inc_bias) : DenseLayer(n_inputs, n_outputs, inc_bias, "Linear") {}
 
     vector<float> Linear::forward()
     {
@@ -129,10 +130,7 @@ namespace splashkit_lib
         return result;
     }
 
-
-    // Sigmoid
-
-    Sigmoid::Sigmoid(int n_inputs) : Layer(n_inputs, n_inputs, false, true, "Sigmoid") {}
+    Sigmoid::Sigmoid(int n_inputs) : ActivationLayer(n_inputs, "Sigmoid") {}
 
     vector<float> Sigmoid::forward()
     {
@@ -156,9 +154,6 @@ namespace splashkit_lib
         return result;
     }
 
-
-    // Loss Function
-
     LossFunction::LossFunction(vector<float> &y, vector<float> &yhat)
     {
         // Validate input sizes
@@ -169,9 +164,6 @@ namespace splashkit_lib
         this->y = y;
         this->yhat = yhat;
     }
-
-
-    // MSE Loss
 
     MSELoss::MSELoss(vector<float> &y, vector<float> &yhat) : LossFunction(y, yhat) {}
 
@@ -191,9 +183,6 @@ namespace splashkit_lib
             result += pow(this->y[i] - this->yhat[i], 2);
         return result / 2;
     }
-
-
-    // Sequential
 
     template <typename T> void Sequential::add_layer(T &layer)
     {
