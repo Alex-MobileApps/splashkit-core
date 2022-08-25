@@ -38,6 +38,7 @@ void setup_tests()
     add_test("Graphics", run_graphics_test);
     add_test("Input", run_input_test);
     add_test ("Logging", run_logging_test);
+    add_test("Neural Networks", run_neural_net_test);
     add_test("Physics", run_physics_test);
     add_test("Resources", run_resources_tests);
     add_test("Shape drawing", run_shape_drawing_test);
