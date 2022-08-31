@@ -29,5 +29,10 @@ void run_dataframe_test()
     // Display
     dataframe_display(df);
 
+    // Display column types
+    for (string col_type : dataframe_col_types(df))
+        cout << col_type << " ";
+    cout << endl;
+
     cout << "Run './skunit_tests' to view unit tests" << endl;
 }

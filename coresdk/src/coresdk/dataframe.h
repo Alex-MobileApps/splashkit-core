@@ -7,11 +7,17 @@
 namespace splashkit_lib
 {
     /**
+     * A null element is an element that can be stored in a dataframe
+     * to represent a missing value
+     */
+    struct nullelement {};
+
+    /**
      * A data element is an element that can be stored in the cell of a
      * dataframe. Its type must be one of the variant types listed in the
      * signature below.
      */
-    typedef std::variant<std::string,int,float,bool,char> data_element;
+    typedef std::variant<std::string,int,float,bool,char,nullelement> data_element;
 
     /**
      * Dataframes contain a table of information about a data set. Data
@@ -44,6 +50,14 @@ namespace splashkit_lib
      * @return int  Number of columns in the dataframe
      */
     int dataframe_num_cols(dataframe &df);
+
+    /**
+     * Returns the data types of all columns in a dataframe
+     *
+     * @param df                            The dataframe
+     * @return std::vector<std::string>     Data types of all columns in the dataframe
+     */
+    std::vector<std::string> dataframe_col_types(dataframe &df);
 
     /**
      * Returns a column from a dataframe.
@@ -136,6 +150,15 @@ namespace splashkit_lib
      * @param col_name  The new name of the column
      */
     void dataframe_update_col(dataframe &df, int idx, std::vector<data_element> &data, std::string col_name);
+
+    /**
+     * Allows null elements to be printed
+     *
+     * @param stream            Output stream to print to
+     * @param data              data element to print
+     * @return std::ostream&    Output stream to print to
+     */
+    std::ostream &operator << (std::ostream &stream, nullelement &elem);
 
     /**
      * Allows data elements to be printed
